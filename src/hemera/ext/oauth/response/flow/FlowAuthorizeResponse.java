@@ -43,6 +43,6 @@ public final class FlowAuthorizeResponse extends AbstractResponse {
 	@Override
 	protected void insertData(final JSONObject data) throws Exception {
 		data.put("authorization_token", this.authorizationToken.value);
-		data.put("authorization_token", this.authorizationToken.getExpiration());
+		data.put("expiration", this.authorizationToken.getExpiration());
 	}
 }

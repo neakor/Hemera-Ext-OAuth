@@ -42,9 +42,9 @@ public class FlowAccessResponse extends AbstractResponse {
 
 	@Override
 	protected void insertData(final JSONObject data) throws Exception {
-		data.put("access_token", this.pair.accessToken);
+		data.put("access_token", this.pair.accessToken.value);
 		data.put("access_expiration", this.pair.accessToken.getExpiration());
-		data.put("refresh_token", this.pair.refreshToken);
+		data.put("refresh_token", this.pair.refreshToken.value);
 		data.put("refresh_expiration", this.pair.refreshToken.getExpiration());
 	}
 }
