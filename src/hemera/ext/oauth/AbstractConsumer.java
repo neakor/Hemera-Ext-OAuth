@@ -530,65 +530,6 @@ public abstract class AbstractConsumer {
 	}
 
 	/**
-	 * Verify the given refresh token.
-	 * <p>
-	 * This method should verify that the given token
-	 * exists, has not been used to exchange for a new
-	 * access token, and is associated with an access
-	 * token that is associated with this consumer.
-	 * @param refreshToken The <code>String</code>
-	 * token to verify.
-	 * @return <code>true</code> if the given token is
-	 * valid. <code>false</code> otherwise.
-	 * @throws SQLException If database access failed.
-	 */
-	protected abstract boolean verifyRefreshToken(final String refreshToken) throws SQLException;
-
-	/**
-	 * Invalidate the access token associated with the
-	 * given refresh token.
-	 * @param refreshToken The <code>String</code>
-	 * refresh token used to identify the access token.
-	 * @throws SQLException If database access failed.
-	 */
-	protected abstract void invalidateAccessToken(final String refreshToken) throws SQLException;
-
-
-	/**
-	 * Associate the given new access token and the
-	 * refresh token pair with the user and permissions
-	 * identified by the given old refresh token with
-	 * this consumer.
-	 * <p>
-	 * This method must ensure that the old refresh
-	 * token is only associated with a single access
-	 * token. Concurrent associations should only allow
-	 * one to succeed.
-	 * <p>
-	 * The access token and refresh token given to this
-	 * method are guaranteed to be unique.
-	 * @param accessToken The <code>String</code> access
-	 * token to associate.
-	 * @param refreshToken The <code>String</code> paired
-	 * refresh token.
-	 * @param oldRefreshToken The <code>String</code>
-	 * authorization token used to identify the user
-	 * and permissions.
-	 * @param accessExpiration The <code>long</code>
-	 * server time in milliseconds when the access token
-	 * should expire.
-	 * @param refreshExpiration The <code>long</code>
-	 * server time in milliseconds when the refresh token
-	 * should expire.
-	 * @return <code>true</code> if association succeeded.
-	 * <code>false</code> if the old refresh token is
-	 * already associated with another access token.
-	 * @throws SQLException If database access failed.
-	 */
-	protected abstract boolean associateAccessTokenPairRefresh(final String accessToken, final String refreshToken, final String oldRefreshToken,
-			final long accessExpiration, final long refreshExpiration) throws SQLException;
-
-	/**
 	 * Retrieve the lifetime duration of access tokens.
 	 * @return The <code>long</code> life time in
 	 * milliseconds.

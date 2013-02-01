@@ -39,21 +39,6 @@ public class TestTokenRandomness {
 		}
 
 		@Override
-		protected boolean verifyRefreshToken(String refreshToken) throws SQLException {
-			return true;
-		}
-
-		@Override
-		protected void invalidateAccessToken(String refreshToken) throws SQLException {
-		}
-
-		@Override
-		protected boolean associateAccessTokenPairRefresh(String accessToken, String refreshToken, String oldRefreshToken, long accessExpiration,
-				long refreshExporation) throws SQLException {
-			return true;
-		}
-
-		@Override
 		protected long getAccessTokenLifetime() {
 			return 10000;
 		}
