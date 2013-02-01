@@ -1,5 +1,9 @@
 package hemera.ext.oauth;
 
+import hemera.ext.oauth.token.AbstractAccessToken;
+import hemera.ext.oauth.token.AbstractAuthorizationToken;
+import hemera.ext.oauth.token.AbstractRefreshToken;
+import hemera.ext.oauth.token.AccessTokenPair;
 import hemera.utility.security.AESUtils;
 
 import java.io.UnsupportedEncodingException;
@@ -161,194 +165,6 @@ public abstract class AbstractConsumer {
 	}
 
 	/**
-	 * Verify the given redirect URL is valid.
-	 * @param redirectURL The <code>String</code> URL
-	 * to verify.
-	 * @return <code>true</code> if given URL is valid.
-	 * <code>false</code> otherwise.
-	 */
-	public boolean verifyRedirectURL(final String redirectURL) {
-		try {
-			final URL url = new URL(redirectURL);
-			final String host = url.getHost();
-			if (host == null) return false;
-			else return this.domain.equalsIgnoreCase(host);
-		} catch (final MalformedURLException e) {
-			return false;
-		}
-	}
-
-	/**
-	 * Create a new access token based on the given
-	 * authorization token if the specified consumer
-	 * secret is valid.
-	 * <p>
-	 * This method should only be used to generate
-	 * an access token with the authorization token
-	 * flow.
-	 * @param consumerSecret The <code>String</code>
-	 * consumer secret to validate.
-	 * @param authorizationToken The <code>String</code>
-	 * authorization token to exchange with.
-	 * @return The <code>AccessTokenPair</code> value.
-	 * <code>null</code> if either the consumer secret
-	 * or the authorization token is invalid.
-	 * @throws NoSuchAlgorithmException If AES is not
-	 * supported.
-	 * @throws NoSuchPaddingException If transformation
-	 * contains a padding that is not available.
-	 * @throws InvalidKeyException If the consumer's
-	 * encryption key is invalid.
-	 * @throws IllegalBlockSizeException If the total
-	 * input length of the data processed by this cipher
-	 * is not a multiple of block size; or if the AES
-	 * encryption algorithm is unable to process the
-	 * input data provided.
-	 * @throws BadPaddingException Should not occur.
-	 * @throws UnsupportedEncodingException If UTF-8
-	 * encoding is not supported.
-	 * @throws SQLException If database access failed.
-	 * @throws DecoderException If hex encoding failed.
-	 */
-	public AccessTokenPair newAccessToken(final String consumerSecret, final String authorizationToken) throws NoSuchAlgorithmException, NoSuchPaddingException,
-	InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, SQLException, DecoderException {
-		// Verify consumer secret.
-		final boolean secretValid = this.verifySecret(consumerSecret);
-		if (!secretValid) return null;
-		// Verify authorization token.
-		final boolean authorizationTokenValid = this.verifyAuthorizationToken(authorizationToken);
-		if (!authorizationTokenValid) return null;
-		// Decrypt authorization token. The decrypted value is
-		// the consumer key, permissions and random chunk.
-		final String decrypted = AESUtils.instance.decrypt(authorizationToken, this.encryptionKey);
-		// Generate new access token.
-		final String accessToken = this.randomToken(decrypted);
-		// Generate a paired refresh token.
-		final String refreshToken = this.randomToken(decrypted);
-		// Associate access token with authorization token.
-		final long currentTime = System.currentTimeMillis();
-		final long accessExpiration = currentTime + this.getAccessTokenLifetime();
-		final long refreshExpiration = currentTime + this.getRefreshTokenLifetime();
-		final boolean succeeded = this.associateAccessTokenPair(accessToken, refreshToken, authorizationToken, accessExpiration, refreshExpiration);
-		if (succeeded) return new AccessTokenPair(accessToken, refreshToken, accessExpiration, refreshExpiration);
-		// Concurrent duplicate associations.
-		else return null;
-	}
-
-	/**
-	 * Create a new access token if the specified
-	 * consumer secret is valid and this consumer has
-	 * the client credentials flow privilege.
-	 * <p>
-	 * This method should only be used to generate
-	 * an access token with the client credentials
-	 * flow.
-	 * @param consumerSecret The <code>String</code>
-	 * consumer secret to validate.
-	 * @param userid The <code>String</code> ID of the
-	 * user granting the permission.
-	 * @param permission The <code>String</code>
-	 * permission to grant to the consumer.
-	 * @return The <code>AccessTokenPair</code> value.
-	 * <code>null</code> if either the consumer secret
-	 * is invalid or the consumer does not have the
-	 * client credentials flow privilege.
-	 * @throws NoSuchAlgorithmException If AES is not
-	 * supported.
-	 * @throws NoSuchPaddingException If transformation
-	 * contains a padding that is not available.
-	 * @throws InvalidKeyException If the consumer's
-	 * encryption key is invalid.
-	 * @throws IllegalBlockSizeException If the total
-	 * input length of the data processed by this cipher
-	 * is not a multiple of block size; or if the AES
-	 * encryption algorithm is unable to process the
-	 * input data provided.
-	 * @throws BadPaddingException Should not occur.
-	 * @throws UnsupportedEncodingException If UTF-8
-	 * encoding is not supported.
-	 * @throws SQLException If database access failed.
-	 * @throws DecoderException If hex encoding failed.
-	 */
-	public AccessTokenPair newAccessToken(final String consumerSecret, final String userid, final String permission) throws NoSuchAlgorithmException,
-	NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, SQLException, DecoderException {
-		// Verify consumer secret.
-		final boolean secretValid = this.verifySecret(consumerSecret);
-		if (!secretValid) return null;
-		// Verify privilege.
-		if (!this.hasClientCredentialsFlowPrivilege()) return null;
-		// Use consumer key and client credentials flow permission as seed.
-		final String seed = this.key+permission;
-		// Generate new access token.
-		final String accessToken = this.randomToken(seed);
-		// Generate a paired refresh token.
-		final String refreshToken = this.randomToken(seed);
-		// Associate access token with user and permission.
-		final long currentTime = System.currentTimeMillis();
-		final long accessExpiration = currentTime + this.getAccessTokenLifetime();
-		final long refreshExpiration = currentTime + this.getRefreshTokenLifetime();
-		final boolean succeeded = this.associateAccessTokenPair(accessToken, refreshToken, userid, permission, accessExpiration, refreshExpiration);
-		if (succeeded) return new AccessTokenPair(accessToken, refreshToken, accessExpiration, refreshExpiration);
-		// Concurrent duplicate associations.
-		else return null;
-	}
-
-	/**
-	 * Exchange for a new access token using the given
-	 * refresh token if the specified consumer secret
-	 * is valid. This method invalidates the previous
-	 * access token associated with the given refresh
-	 * token.
-	 * @param consumerSecret The <code>String</code>
-	 * consumer secret to validate.
-	 * @param refreshToken The <code>String</code>
-	 * refresh token associated with a previous access
-	 * token to exchange with.
-	 * @return The new <code>AccessTokenPair</code>.
-	 * <code>null</code> if either the consumer secret
-	 * or the refresh token is invalid.
-	 * @throws NoSuchAlgorithmException If AES is not
-	 * supported.
-	 * @throws NoSuchPaddingException If transformation
-	 * contains a padding that is not available.
-	 * @throws InvalidKeyException If the consumer's
-	 * encryption key is invalid.
-	 * @throws IllegalBlockSizeException If the total
-	 * input length of the data processed by this cipher
-	 * is not a multiple of block size; or if the AES
-	 * encryption algorithm is unable to process the
-	 * input data provided.
-	 * @throws BadPaddingException Should not occur.
-	 * @throws UnsupportedEncodingException If UTF-8
-	 * encoding is not supported.
-	 * @throws SQLException If database access failed.
-	 * @throws DecoderException If hex encoding failed.
-	 */
-	public AccessTokenPair refreshAccessToken(final String consumerSecret, final String refreshToken) throws NoSuchAlgorithmException, NoSuchPaddingException,
-	InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, SQLException, DecoderException {
-		// Verify consumer secret.
-		final boolean secretValid = this.verifySecret(consumerSecret);
-		if (!secretValid) return null;
-		// Verify refresh token.
-		final boolean refreshTokenValid = this.verifyRefreshToken(refreshToken);
-		if (!refreshTokenValid) return null;
-		// Invalidate previous access token.
-		this.invalidateAccessToken(refreshToken);
-		// Generate new access token.
-		final String accessToken = this.randomToken(refreshToken);
-		// Generate a paired refresh token.
-		final String newRefreshToken = this.randomToken(accessToken);
-		// Associate access token with user and permissions.
-		final long currentTime = System.currentTimeMillis();
-		final long accessExpiration = currentTime + this.getAccessTokenLifetime();
-		final long refreshExpiration = currentTime + this.getRefreshTokenLifetime();
-		final boolean succeeded = this.associateAccessTokenPairRefresh(accessToken, newRefreshToken, refreshToken, accessExpiration, refreshExpiration);
-		if (succeeded) return new AccessTokenPair(accessToken, newRefreshToken, accessExpiration, refreshExpiration);
-		// Concurrent duplicate associations.
-		else return null;
-	}
-
-	/**
 	 * Verify the given consumer secret. A consumer's
 	 * secret should be the consumer's key encrypted
 	 * using its encryption key.
@@ -369,6 +185,351 @@ public abstract class AbstractConsumer {
 	}
 
 	/**
+	 * Verify the given redirect URL is valid.
+	 * @param redirectURL The <code>String</code> URL
+	 * to verify.
+	 * @return <code>true</code> if given URL is valid.
+	 * <code>false</code> otherwise.
+	 */
+	public boolean verifyRedirectURL(final String redirectURL) {
+		try {
+			final URL url = new URL(redirectURL);
+			final String host = url.getHost();
+			if (host == null) return false;
+			else return this.domain.equalsIgnoreCase(host);
+		} catch (final MalformedURLException e) {
+			return false;
+		}
+	}
+
+	/**
+	 * Generate a new authorization token for this
+	 * consumer with specified permissions associated
+	 * with the user with given ID.
+	 * @param permissions The <code>String</code> of
+	 * the permissions requested.
+	 * @param userid The <code>String</code> ID of the
+	 * user granting the permissions.
+	 * @return The <code>AbstractAuthorizationToken</code>
+	 * created.
+	 * @throws NoSuchAlgorithmException If AES is not
+	 * supported.
+	 * @throws NoSuchPaddingException If transformation
+	 * contains a padding that is not available.
+	 * @throws InvalidKeyException If the consumer's
+	 * encryption key is invalid.
+	 * @throws IllegalBlockSizeException If the total
+	 * input length of the data processed by this cipher
+	 * is not a multiple of block size; or if the AES
+	 * encryption algorithm is unable to process the
+	 * input data provided.
+	 * @throws BadPaddingException Should not occur.
+	 * @throws UnsupportedEncodingException If UTF-8
+	 * encoding is not supported.
+	 * @throws SQLException If associating authorization
+	 * token failed.
+	 * @throws DecoderException If hex encoding failed.
+	 */
+	public AbstractAuthorizationToken newAuthorizationToken(final String permissions, final String userid) throws NoSuchAlgorithmException, NoSuchPaddingException,
+	InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, SQLException, DecoderException {
+		// Generate a token chunk based on consumer data and resource grant.
+		final String token = this.randomToken(this.key+permissions);
+		final long expiration = System.currentTimeMillis() + this.getAuthorizationTokenLifetime();
+		return this.insertAuthorizationToken(token, permissions, userid, expiration);
+	}
+
+	/**
+	 * Insert a new authorization token with the given
+	 * token value, granted permissions, and the user
+	 * with the given user ID for this consumer.
+	 * @param value The <code>String</code> token value.
+	 * @param permissions The <code>String</code> of
+	 * permissions granted.
+	 * @param userid The <code>String</code> ID of the
+	 * user granted permissions.
+	 * @param expiration The <code>long</code> server
+	 * time in milliseconds when the token should expire.
+	 * @return The <code>AbstractAuthorizationToken</code>
+	 * inserted.
+	 * @throws SQLException If query execution failed.
+	 */
+	protected abstract AbstractAuthorizationToken insertAuthorizationToken(final String value, final String permissions, final String userid,
+			final long expiration) throws SQLException;
+
+	/**
+	 * Create a new pair of access and refresh tokens
+	 * based on the given authorization token if the
+	 * specified consumer secret is valid.
+	 * <p>
+	 * This method should only be used to generate
+	 * an access token with the authorization token
+	 * flow.
+	 * @param consumerSecret The <code>String</code>
+	 * consumer secret to validate.
+	 * @param authorizationToken The instance of the
+	 * <code>AbstractAuthorizationToken</code>.
+	 * @return The <code>AccessTokenPair</code> value.
+	 * @throws NoSuchAlgorithmException If AES is not
+	 * supported.
+	 * @throws NoSuchPaddingException If transformation
+	 * contains a padding that is not available.
+	 * @throws InvalidKeyException If the consumer's
+	 * encryption key is invalid.
+	 * @throws IllegalBlockSizeException If the total
+	 * input length of the data processed by this cipher
+	 * is not a multiple of block size; or if the AES
+	 * encryption algorithm is unable to process the
+	 * input data provided.
+	 * @throws BadPaddingException Should not occur.
+	 * @throws UnsupportedEncodingException If UTF-8
+	 * encoding is not supported.
+	 * @throws SQLException If database access failed.
+	 * @throws DecoderException If hex encoding failed.
+	 */
+	public AccessTokenPair newAccessToken(final String consumerSecret, final AbstractAuthorizationToken authorizationToken) throws NoSuchAlgorithmException, NoSuchPaddingException,
+	InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, SQLException, DecoderException {
+		// Verify consumer secret.
+		final boolean secretValid = this.verifySecret(consumerSecret);
+		if (!secretValid) throw new IllegalArgumentException("Invalid consumer secret.");
+		// Verify authorization token.
+		if (authorizationToken == null || !authorizationToken.isValid() || !authorizationToken.consumerKey.equals(this.key)) {
+			throw new IllegalArgumentException("Invalid authorization token.");
+		}
+		// Decrypt authorization token. The decrypted value is
+		// the consumer key, permissions and random chunk.
+		final String seed = AESUtils.instance.decrypt(authorizationToken.value, this.encryptionKey);
+		// Generate new access token value.
+		final String accessTokenValue = this.randomToken(seed);
+		// Create new refresh token.
+		final long currentTime = System.currentTimeMillis();
+		final AbstractRefreshToken refreshToken = this.newRefreshToken(seed, accessTokenValue, currentTime);
+		// Create new access token.
+		final AbstractAccessToken accessToken = this.newAccessToken(accessTokenValue, authorizationToken.permissions, authorizationToken.userid, refreshToken, currentTime);
+		return new AccessTokenPair(accessToken, refreshToken);
+	}
+
+	/**
+	 * Generate a new refresh token using given seed
+	 * and the associated access token value.
+	 * @param seed The <code>String</code> seed used
+	 * to generate the associated access token value.
+	 * @param accessTokenValue The <code>String</code>
+	 * associated access token value.
+	 * @param currentTime The <code>long</code> current
+	 * time in milliseconds.
+	 * @return The <code>AbstractRefreshToken</code>
+	 * generated.
+	 * @throws SQLException If database access failed.
+	 * @throws NoSuchAlgorithmException If AES is not
+	 * supported.
+	 * @throws NoSuchPaddingException If transformation
+	 * contains a padding that is not available.
+	 * @throws InvalidKeyException If the consumer's
+	 * encryption key is invalid.
+	 * @throws IllegalBlockSizeException If the total
+	 * input length of the data processed by this cipher
+	 * is not a multiple of block size; or if the AES
+	 * encryption algorithm is unable to process the
+	 * input data provided.
+	 * @throws BadPaddingException Should not occur.
+	 * @throws UnsupportedEncodingException If UTF-8
+	 * encoding is not supported.
+	 * @throws DecoderException If hex encoding failed.
+	 */
+	private AbstractRefreshToken newRefreshToken(final String seed, final String accessTokenValue, final long currentTime) throws SQLException, NoSuchAlgorithmException,
+	NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, DecoderException {
+		final String refreshTokenValue = this.randomToken(seed);
+		final long refreshExpiration = currentTime + this.getRefreshTokenLifetime();
+		final AbstractRefreshToken refreshToken = this.insertRefreshToken(refreshTokenValue, accessTokenValue, refreshExpiration);
+		if (refreshToken == null) throw new SQLException("Generating refresh token failed.");
+		return refreshToken;
+	}
+
+	/**
+	 * Generate a new access token using given value,
+	 * granted permissions, granting user's ID and
+	 * the associated refresh token.
+	 * @param value The <code>String</code> access
+	 * token value.
+	 * @param permissions The <code>String</code>
+	 * granted permissions.
+	 * @param userid The <code>String</code> ID of the
+	 * granting user.
+	 * @param refreshToken The <code>AbstractRefreshToken</code>
+	 * associated with the access token.
+	 * @param currentTime The <code>long</code> current
+	 * time in milliseconds.
+	 * @return The <code>AbstractAccessToken</code>
+	 * generated.
+	 * @throws SQLException If database access failed.
+	 * @throws NoSuchAlgorithmException If AES is not
+	 * supported.
+	 * @throws NoSuchPaddingException If transformation
+	 * contains a padding that is not available.
+	 * @throws InvalidKeyException If the consumer's
+	 * encryption key is invalid.
+	 * @throws IllegalBlockSizeException If the total
+	 * input length of the data processed by this cipher
+	 * is not a multiple of block size; or if the AES
+	 * encryption algorithm is unable to process the
+	 * input data provided.
+	 * @throws BadPaddingException Should not occur.
+	 * @throws UnsupportedEncodingException If UTF-8
+	 * encoding is not supported.
+	 * @throws DecoderException If hex encoding failed.
+	 */
+	private AbstractAccessToken newAccessToken(final String value, final String permissions, final String userid, final AbstractRefreshToken refreshToken, final long currentTime)
+			throws SQLException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException,
+			UnsupportedEncodingException, DecoderException {
+		final long accessExpiration = currentTime + this.getAccessTokenLifetime();
+		final AbstractAccessToken accessToken = this.insertAccessToken(value, refreshToken, permissions, userid, accessExpiration);
+		if (accessToken == null) throw new SQLException("Generating access token failed.");
+		return accessToken;
+	}
+
+	/**
+	 * Insert a new refresh token with given token
+	 * value, associated access token value and the
+	 * refresh token's expiration time.
+	 * @param value The <code>String</code> refresh
+	 * token value.
+	 * @param accessTokenValue The <code>String</code>
+	 * associated access token value.
+	 * @param expiration The <code>long</code> refresh
+	 * token expiration in milliseconds.
+	 * @return The <code>AbstractRefreshToken</code>
+	 * inserted.
+	 * @throws SQLException If database access failed.
+	 */
+	protected abstract AbstractRefreshToken insertRefreshToken(final String value, final String accessTokenValue, final long expiration) throws SQLException;
+
+	/**
+	 * Create new access token with given token value,
+	 * the associated refresh token value, granted
+	 * permissions, granting user's ID and the access
+	 * token's expiration time.
+	 * @param value The <code>String</code> access token
+	 * value.
+	 * @param refreshToken The <code>AbstractRefreshToken</code>
+	 * associated with the access token.
+	 * @param permissions The <code>String</code> granted
+	 * permissions.
+	 * @param userid The <code>String</code> ID of the
+	 * granting user.
+	 * @param expiration The <code>long</code> access
+	 * token expiration in milliseconds.
+	 * @return The <code>AbstractAccessToken</code>
+	 * inserted.
+	 * @throws SQLException If database access failed.
+	 */
+	protected abstract AbstractAccessToken insertAccessToken(final String value, final AbstractRefreshToken refreshToken, final String permissions,
+			final String userid, final long expiration) throws SQLException;
+
+	/**
+	 * Create a new pair of access and refresh tokens
+	 * if the specified consumer secret is valid and
+	 * this consumer has the client credentials flow
+	 * privilege.
+	 * <p>
+	 * This method should only be used to generate
+	 * an access token with the client credentials
+	 * flow.
+	 * @param consumerSecret The <code>String</code>
+	 * consumer secret to validate.
+	 * @param userid The <code>String</code> ID of the
+	 * user granting the permission.
+	 * @param permissions The <code>String</code>
+	 * permissions to grant to the consumer.
+	 * @return The <code>AccessTokenPair</code> value.
+	 * @throws NoSuchAlgorithmException If AES is not
+	 * supported.
+	 * @throws NoSuchPaddingException If transformation
+	 * contains a padding that is not available.
+	 * @throws InvalidKeyException If the consumer's
+	 * encryption key is invalid.
+	 * @throws IllegalBlockSizeException If the total
+	 * input length of the data processed by this cipher
+	 * is not a multiple of block size; or if the AES
+	 * encryption algorithm is unable to process the
+	 * input data provided.
+	 * @throws BadPaddingException Should not occur.
+	 * @throws UnsupportedEncodingException If UTF-8
+	 * encoding is not supported.
+	 * @throws SQLException If database access failed.
+	 * @throws DecoderException If hex encoding failed.
+	 */
+	public AccessTokenPair newAccessToken(final String consumerSecret, final String userid, final String permissions) throws NoSuchAlgorithmException,
+	NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, SQLException, DecoderException {
+		// Verify consumer secret.
+		final boolean secretValid = this.verifySecret(consumerSecret);
+		if (!secretValid) throw new IllegalArgumentException("Invalid consumer secret.");
+		// Verify privilege.
+		if (!this.hasClientCredentialsFlowPrivilege()) throw new RuntimeException("Insufficient consumer privilege.");
+		// Use consumer key and client credentials flow permission as seed.
+		final String seed = this.key+permissions;
+		// Generate new access token value.
+		final String accessTokenValue = this.randomToken(seed);
+		// Create new refresh token.
+		final long currentTime = System.currentTimeMillis();
+		final AbstractRefreshToken refreshToken = this.newRefreshToken(seed, accessTokenValue, currentTime);
+		// Create new access token.
+		final AbstractAccessToken accessToken = this.newAccessToken(accessTokenValue, permissions, userid, refreshToken, currentTime);
+		return new AccessTokenPair(accessToken, refreshToken);
+	}
+
+	/**
+	 * Exchange for a new pair of access and refresh
+	 * tokens using the given refresh token if the
+	 * specified consumer secret is valid. This method
+	 * invalidates the refresh token and the access
+	 * token associated with the given refresh token.
+	 * @param consumerSecret The <code>String</code>
+	 * consumer secret to validate.
+	 * @param refreshToken The <code>AbstractRefreshToken</code>
+	 * to exchange.
+	 * @return The new <code>AccessTokenPair</code>.
+	 * @throws NoSuchAlgorithmException If AES is not
+	 * supported.
+	 * @throws NoSuchPaddingException If transformation
+	 * contains a padding that is not available.
+	 * @throws InvalidKeyException If the consumer's
+	 * encryption key is invalid.
+	 * @throws IllegalBlockSizeException If the total
+	 * input length of the data processed by this cipher
+	 * is not a multiple of block size; or if the AES
+	 * encryption algorithm is unable to process the
+	 * input data provided.
+	 * @throws BadPaddingException Should not occur.
+	 * @throws UnsupportedEncodingException If UTF-8
+	 * encoding is not supported.
+	 * @throws SQLException If database access failed.
+	 * @throws DecoderException If hex encoding failed.
+	 */
+	public AccessTokenPair refreshAccessToken(final String consumerSecret, final AbstractRefreshToken refreshToken) throws NoSuchAlgorithmException, NoSuchPaddingException,
+	InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, SQLException, DecoderException {
+		// Verify consumer secret.
+		final boolean secretValid = this.verifySecret(consumerSecret);
+		if (!secretValid) return null;
+		// Verify refresh token.
+		if (refreshToken == null || !refreshToken.isValid()) throw new IllegalArgumentException("Invalid refresh token.");
+		final AbstractAccessToken oldAccessToken = refreshToken.getAssociatedAccessToken();
+		if (oldAccessToken == null || !oldAccessToken.consumerKey.equals(this.key)) throw new IllegalArgumentException("Invalid refresh token.");
+		// Invalidate previous tokens.
+		refreshToken.invalidate();
+		oldAccessToken.invalidate();
+		// Use consumer key and client credentials flow permission as seed.
+		final String seed = this.key+oldAccessToken.permissions;
+		// Generate new access token value.
+		final String newAccessTokenValue = this.randomToken(seed);
+		// Create new refresh token.
+		final long currentTime = System.currentTimeMillis();
+		final AbstractRefreshToken newRefreshToken = this.newRefreshToken(seed, newAccessTokenValue, currentTime);
+		// Create new access token.
+		final AbstractAccessToken newAccessToken = this.newAccessToken(newAccessTokenValue, oldAccessToken.permissions, oldAccessToken.userid, newRefreshToken, currentTime);
+		return new AccessTokenPair(newAccessToken, newRefreshToken);
+	}
+
+	/**
 	 * Verify the given refresh token.
 	 * <p>
 	 * This method should verify that the given token
@@ -384,20 +545,6 @@ public abstract class AbstractConsumer {
 	protected abstract boolean verifyRefreshToken(final String refreshToken) throws SQLException;
 
 	/**
-	 * Verify the given authorization token.
-	 * <p>
-	 * This method should verify that the given token
-	 * exists, has not been used, is associated with
-	 * this consumer, and has not expired.
-	 * @param authorizationToken The <code>String</code>
-	 * token to verify.
-	 * @return <code>true</code> if the given token is
-	 * valid. <code>false</code> otherwise.
-	 * @throws SQLException If database access failed.
-	 */
-	protected abstract boolean verifyAuthorizationToken(final String authorizationToken) throws SQLException;
-
-	/**
 	 * Invalidate the access token associated with the
 	 * given refresh token.
 	 * @param refreshToken The <code>String</code>
@@ -406,76 +553,6 @@ public abstract class AbstractConsumer {
 	 */
 	protected abstract void invalidateAccessToken(final String refreshToken) throws SQLException;
 
-	/**
-	 * Associate the given new access token and the
-	 * refresh token pair with the user and permissions
-	 * identified by the given authorization token with
-	 * this consumer.
-	 * <p>
-	 * This method must ensure that the authorization
-	 * token is only associated with a single access
-	 * token. Concurrent associations should only allow
-	 * one to succeed. By the end of this method logic
-	 * execution, the authorization token should be
-	 * marked as used to prevent further use of the same
-	 * authorization token.
-	 * <p>
-	 * The access token and refresh token given to this
-	 * method are guaranteed to be unique.
-	 * <p>
-	 * This method is only used in the authorization
-	 * token flow.
-	 * @param accessToken The <code>String</code> access
-	 * token to associate.
-	 * @param refreshToken The <code>String</code> paired
-	 * refresh token.
-	 * @param authorizationToken The <code>String</code>
-	 * authorization token used to identify the user
-	 * and permissions.
-	 * @param accessExpiration The <code>long</code>
-	 * server time in milliseconds when the access token
-	 * should expire.
-	 * @param refreshExpiration The <code>long</code>
-	 * server time in milliseconds when the refresh token
-	 * should expire.
-	 * @return <code>true</code> if association succeeded.
-	 * <code>false</code> if the authorization token
-	 * is already associated with another access token.
-	 * @throws SQLException If database access failed.
-	 */
-	protected abstract boolean associateAccessTokenPair(final String accessToken, final String refreshToken, final String authorizationToken,
-			final long accessExpiration, final long refreshExpiration) throws SQLException;
-
-	/**
-	 * Associate the given new access token and the
-	 * refresh token pair with the given user and
-	 * permission with this consumer.
-	 * <p>
-	 * The access token and refresh token given to this
-	 * method are guaranteed to be unique.
-	 * <p>
-	 * This method is only used in the client credentials
-	 * token flow.
-	 * @param accessToken The <code>String</code> access
-	 * token to associate.
-	 * @param refreshToken The <code>String</code> paired
-	 * refresh token.
-	 * @param userid The <code>String</code> ID of the
-	 * user granting the permission.
-	 * @param permission The <code>String</code>
-	 * permission to grant to the consumer.
-	 * @param accessExpiration The <code>long</code>
-	 * server time in milliseconds when the access token
-	 * should expire.
-	 * @param refreshExpiration The <code>long</code>
-	 * server time in milliseconds when the refresh token
-	 * should expire.
-	 * @return <code>true</code> if association succeeded.
-	 * <code>false</code> if any processing failed.
-	 * @throws SQLException If database access failed.
-	 */
-	protected abstract boolean associateAccessTokenPair(final String accessToken, final String refreshToken, final String userid, final String permission,
-			final long accessExpiration, final long refreshExpiration) throws SQLException;
 
 	/**
 	 * Associate the given new access token and the
@@ -512,76 +589,19 @@ public abstract class AbstractConsumer {
 			final long accessExpiration, final long refreshExpiration) throws SQLException;
 
 	/**
-	 * Generate a new authorization token for this
-	 * consumer with specified permissions associated
-	 * with the user with given ID.
-	 * @param permissions The <code>String</code> of
-	 * the permissions requested.
-	 * @param userid The <code>String</code> ID of the
-	 * user granting the permissions.
-	 * @return The <code>String</code> authorization
-	 * token newly generated.
-	 * @throws NoSuchAlgorithmException If AES is not
-	 * supported.
-	 * @throws NoSuchPaddingException If transformation
-	 * contains a padding that is not available.
-	 * @throws InvalidKeyException If the consumer's
-	 * encryption key is invalid.
-	 * @throws IllegalBlockSizeException If the total
-	 * input length of the data processed by this cipher
-	 * is not a multiple of block size; or if the AES
-	 * encryption algorithm is unable to process the
-	 * input data provided.
-	 * @throws BadPaddingException Should not occur.
-	 * @throws UnsupportedEncodingException If UTF-8
-	 * encoding is not supported.
-	 * @throws SQLException If associating authorization
-	 * token failed.
-	 * @throws DecoderException If hex encoding failed.
-	 */
-	public String newAuthorizationToken(final String permissions, final String userid) throws NoSuchAlgorithmException, NoSuchPaddingException,
-	InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, SQLException, DecoderException {
-		// Generate a token chunk based on consumer data and resource grant.
-		final String token = this.randomToken(this.key+permissions);
-		final long expiration = System.currentTimeMillis() + this.getAuthorizationTokenLifetime();
-		this.associateAuthorizationToken(token, permissions, userid, expiration);
-		return token;
-	}
-
-	/**
-	 * Associate the new authorization token with the
-	 * given permissions of the granting user with the
-	 * given user ID with this consumer.
-	 * <p>
-	 * The authorization token given to this method is
-	 * guaranteed to be unique.
-	 * @param token The <code>String</code> authorization
-	 * token.
-	 * @param permissions The <code>String</code> of
-	 * permissions granted.
-	 * @param userid The <code>String</code> ID of the
-	 * user granted permissions.
-	 * @param expiration The <code>long</code> server
-	 * time in milliseconds when the token should expire.
-	 * @throws SQLException If query execution failed.
-	 */
-	protected abstract void associateAuthorizationToken(final String token, final String permissions, final String userid,
-			final long expiration) throws SQLException;
-
-	/**
 	 * Retrieve the lifetime duration of access tokens.
 	 * @return The <code>long</code> life time in
 	 * milliseconds.
 	 */
 	protected abstract long getAccessTokenLifetime();
-	
+
 	/**
 	 * Retrieve the lifetime duration of refresh tokens.
 	 * @return The <code>long</code> life time in
 	 * milliseconds.
 	 */
 	protected abstract long getRefreshTokenLifetime();
-	
+
 	/**
 	 * Retrieve the lifetime duration of authorization
 	 * tokens.
@@ -602,14 +622,12 @@ public abstract class AbstractConsumer {
 	 * the permissions requested.
 	 * @param userid The <code>String</code> ID of the
 	 * user granting the permissions.
-	 * @return The <code>String</code> authorization
-	 * token. <code>null</code> if there is none or the
-	 * authorization token has been used to exchange an
-	 * access token already.
+	 * @return The <code>AbstractAuthorizationToken</code>.
+	 * <code>null</code> if there is none.
 	 * @throws SQLException If database access failed.
 	 */
-	public abstract String getValidAuthorizationToken(final String permissions, final String userid) throws SQLException;
-	
+	public abstract AbstractAuthorizationToken getValidAuthorizationToken(final String permissions, final String userid) throws SQLException;
+
 	/**
 	 * Check if the consumer has user authorization
 	 * privilege to issue authorization tokens on
@@ -618,7 +636,7 @@ public abstract class AbstractConsumer {
 	 * such privilege. <code>false</code> otherwise.
 	 */
 	public abstract boolean hasUserAuthorizationPrivilege();
-	
+
 	/**
 	 * Check if the consumer has user authentication
 	 * privilege to authenticate a user via user's
@@ -627,7 +645,7 @@ public abstract class AbstractConsumer {
 	 * such privilege. <code>false</code> otherwise.
 	 */
 	public abstract boolean hasUserAuthenticationPrivilege();
-	
+
 	/**
 	 * Check if the consumer has client credentials
 	 * flow privilege that allows the consumer to obtain

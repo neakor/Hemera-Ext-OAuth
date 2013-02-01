@@ -2,9 +2,9 @@ package hemera.ext.oauth.processor.flow;
 
 import hemera.core.structure.enumn.EHttpStatus;
 import hemera.ext.oauth.AbstractConsumer;
-import hemera.ext.oauth.AccessTokenPair;
 import hemera.ext.oauth.request.flow.FlowAccessCredentialsPostRequest;
 import hemera.ext.oauth.response.flow.FlowAccessResponse;
+import hemera.ext.oauth.token.AccessTokenPair;
 
 /**
  * <code>AbstractFlowAccessCredentialsPostProcessor</code>
@@ -29,7 +29,7 @@ public abstract class AbstractFlowAccessCredentialsPostProcessor<C extends Abstr
 		// Invalid secret or authorization token.
 		if (tokenPair == null) return new FlowAccessResponse(EHttpStatus.C400_BadRequest, "Invalid consumer secret or unprivileged consumer.");
 		// Success.
-		else return new FlowAccessResponse(tokenPair.accessToken, tokenPair.refreshToken, tokenPair.accessExpiration);
+		else return new FlowAccessResponse(tokenPair);
 	}
 	
 	/**

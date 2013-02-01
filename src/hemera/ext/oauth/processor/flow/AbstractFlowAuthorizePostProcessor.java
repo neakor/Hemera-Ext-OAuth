@@ -3,6 +3,7 @@ package hemera.ext.oauth.processor.flow;
 import hemera.ext.oauth.AbstractConsumer;
 import hemera.ext.oauth.request.flow.FlowAuthorizePostRequest;
 import hemera.ext.oauth.response.flow.FlowAuthorizeResponse;
+import hemera.ext.oauth.token.AbstractAuthorizationToken;
 
 /**
  * <code>AbstractFlowAuthorizePostProcessor</code>
@@ -17,7 +18,7 @@ extends AbstractFlowAuthorizeProcessor<FlowAuthorizePostRequest, C> {
 
 	@Override
 	protected final FlowAuthorizeResponse processRequest(final FlowAuthorizePostRequest request, final C consumer) throws Exception {
-		final String token = consumer.newAuthorizationToken(request.permissions, request.userid);
+		final AbstractAuthorizationToken token = consumer.newAuthorizationToken(request.permissions, request.userid);
 		return new FlowAuthorizeResponse(token);
 	}
 	

@@ -4,6 +4,7 @@ import org.json.JSONObject;
 
 import hemera.core.structure.AbstractResponse;
 import hemera.core.structure.enumn.EHttpStatus;
+import hemera.ext.oauth.token.AccessTokenPair;
 
 /**
  * <code>FlowAccessResponse</code> defines the response
@@ -14,38 +15,19 @@ import hemera.core.structure.enumn.EHttpStatus;
  */
 public class FlowAccessResponse extends AbstractResponse {
 	/**
-	 * The <code>String</code> access token.
+	 * The <code>AccessTokenPair</code>.
 	 */
-	private final String accessToken;
-	/**
-	 * The <code>String</code> refresh token.
-	 */
-	private final String refreshToken;
-	/**
-	 * The <code>long</code> access token expiration time
-	 * in milliseconds.
-	 */
-	private final long expiration;
+	private final AccessTokenPair pair;
 	
 	/**
 	 * Constructor of <code>FlowAccessResponse</code>.
-	 * @param accessToken The <code>String</code> access
-	 * token.
-	 * @param refreshToken The <code>String</code> refresh
-	 * token.
-	 * @param expiration The <code>long</code> access
-	 * token expiration time in milliseconds.
+	 * @param pair The <code>AccessTokenPair</code>.
 	 */
-	public FlowAccessResponse(final String accessToken, final String refreshToken, final long expiration) {
-		this.accessToken = accessToken;
-		this.refreshToken = refreshToken;
-		if (this.accessToken == null) {
-			throw new IllegalArgumentException("A valid access token must be specified for a success response.");
+	public FlowAccessResponse(final AccessTokenPair pair) {
+		this.pair = pair;
+		if (this.pair == null) {
+			throw new IllegalArgumentException("A valid access token pair must be specified for a success response.");
 		}
-		if (this.refreshToken == null) {
-			throw new IllegalArgumentException("A valid refresh token must be specified for a success response.");
-		}
-		this.expiration = expiration;
 	}
 	
 	/**
@@ -55,15 +37,14 @@ public class FlowAccessResponse extends AbstractResponse {
 	 */
 	public FlowAccessResponse(final EHttpStatus status, final String error) {
 		super(status, error);
-		this.accessToken = null;
-		this.refreshToken = null;
-		this.expiration = Long.MIN_VALUE;
+		this.pair = null;
 	}
 
 	@Override
 	protected void insertData(final JSONObject data) throws Exception {
-		data.put("access_token", this.accessToken);
-		data.put("refresh_token", this.refreshToken);
-		data.put("expiration", this.expiration);
+		data.put("access_token", this.pair.accessToken);
+		data.put("access_expiration", this.pair.accessToken.getExpiration());
+		data.put("refresh_token", this.pair.refreshToken);
+		data.put("refresh_expiration", this.pair.refreshToken.getExpiration());
 	}
 }

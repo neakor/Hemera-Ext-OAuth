@@ -4,6 +4,7 @@ import org.json.JSONObject;
 
 import hemera.core.structure.AbstractResponse;
 import hemera.core.structure.enumn.EHttpStatus;
+import hemera.ext.oauth.token.AbstractAuthorizationToken;
 
 /**
  * <code>FlowAuthorizeResponse</code> defines the OAuth
@@ -14,16 +15,15 @@ import hemera.core.structure.enumn.EHttpStatus;
  */
 public final class FlowAuthorizeResponse extends AbstractResponse {
 	/**
-	 * The <code>String</code> authorization token.
+	 * The <code>AbstractAuthorizationToken</code>.
 	 */
-	private final String authorizationToken;
+	private final AbstractAuthorizationToken authorizationToken;
 	
 	/**
 	 * Constructor of <code>AuthorizationResponse</code>.
-	 * @param token The <code>String</code> authorization
-	 * token.
+	 * @param token The <code>AbstractAuthorizationToken</code>.
 	 */
-	public FlowAuthorizeResponse(final String token) {
+	public FlowAuthorizeResponse(final AbstractAuthorizationToken token) {
 		this.authorizationToken = token;
 		if (this.authorizationToken == null) {
 			throw new IllegalArgumentException("A valid authorization token must be specified for a success response.");
@@ -42,6 +42,7 @@ public final class FlowAuthorizeResponse extends AbstractResponse {
 
 	@Override
 	protected void insertData(final JSONObject data) throws Exception {
-		data.put("authorization_token", this.authorizationToken);
+		data.put("authorization_token", this.authorizationToken.value);
+		data.put("authorization_token", this.authorizationToken.getExpiration());
 	}
 }
