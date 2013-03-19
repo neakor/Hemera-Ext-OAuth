@@ -126,7 +126,7 @@ public abstract class AbstractConsumer {
 	 * encoding is not supported.
 	 * @throws DecoderException If hex encoding failed.
 	 */
-	private String randomToken(final String seed) throws NoSuchAlgorithmException, NoSuchPaddingException,
+	public String randomToken(final String seed) throws NoSuchAlgorithmException, NoSuchPaddingException,
 	InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, DecoderException {
 		final Random random = new Random();
 		// Generate a random chunk of string used to randomize the seed.
