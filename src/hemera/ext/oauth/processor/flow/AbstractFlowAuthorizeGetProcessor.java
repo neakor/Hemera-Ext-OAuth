@@ -14,11 +14,11 @@ import hemera.ext.oauth.token.AbstractAuthorizationToken;
  * @author Yi Wang (Neakor)
  * @version 1.0.1
  */
-public abstract class AbstractFlowAuthorizeGetProcessor<C extends AbstractConsumer>
-extends AbstractFlowAuthorizeProcessor<FlowAuthorizeGetRequest, C> {
+public abstract class AbstractFlowAuthorizeGetProcessor<RQ extends FlowAuthorizeGetRequest, C extends AbstractConsumer>
+extends AbstractFlowAuthorizeProcessor<RQ, C> {
 
 	@Override
-	protected FlowAuthorizeResponse processRequest(final FlowAuthorizeGetRequest request, final C consumer) throws Exception {
+	protected FlowAuthorizeResponse processRequest(final RQ request, final C consumer) throws Exception {
 		// Retrieve existing token.
 		final AbstractAuthorizationToken token = consumer.getValidAuthorizationToken(request.permissions, request.userid);
 		if (token == null) {
@@ -26,10 +26,5 @@ extends AbstractFlowAuthorizeProcessor<FlowAuthorizeGetRequest, C> {
 		} else {
 			return new FlowAuthorizeResponse(token);
 		}
-	}
-
-	@Override
-	public Class<FlowAuthorizeGetRequest> getRequestType() {
-		return FlowAuthorizeGetRequest.class;
 	}
 }

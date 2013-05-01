@@ -15,11 +15,11 @@ import hemera.ext.oauth.token.AccessTokenPair;
  * @author Yi Wang (Neakor)
  * @version 1.0.1
  */
-public abstract class AbstractFlowAccessPutProcessor<C extends AbstractConsumer> extends
-AbstractFlowAccessProcessor<FlowAccessPutRequest, C> {
+public abstract class AbstractFlowAccessPutProcessor<RQ extends FlowAccessPutRequest, C extends AbstractConsumer> extends
+AbstractFlowAccessProcessor<RQ, C> {
 
 	@Override
-	protected FlowAccessResponse processRequest(final FlowAccessPutRequest request, final C consumer) throws Exception {
+	protected FlowAccessResponse processRequest(final RQ request, final C consumer) throws Exception {
 		// Retrieve refresh token.
 		final AbstractRefreshToken refreshToken = this.getRefreshToken(request.refreshToken);
 		if (refreshToken == null) throw new IllegalArgumentException("Invalid refresh token.");
@@ -39,9 +39,4 @@ AbstractFlowAccessProcessor<FlowAccessPutRequest, C> {
 	 * @throws Exception If any processing failed.
 	 */
 	protected abstract AbstractRefreshToken getRefreshToken(final String value) throws Exception;
-	
-	@Override
-	public Class<FlowAccessPutRequest> getRequestType() {
-		return FlowAccessPutRequest.class;
-	}
 }

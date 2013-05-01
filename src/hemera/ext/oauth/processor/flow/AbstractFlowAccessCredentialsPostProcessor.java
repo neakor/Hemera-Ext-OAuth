@@ -15,11 +15,11 @@ import hemera.ext.oauth.token.AccessTokenPair;
  * @author Yi Wang (Neakor)
  * @version 1.0.1
  */
-public abstract class AbstractFlowAccessCredentialsPostProcessor<C extends AbstractConsumer> extends
-		AbstractFlowAccessProcessor<FlowAccessCredentialsPostRequest, C> {
+public abstract class AbstractFlowAccessCredentialsPostProcessor<RQ extends FlowAccessCredentialsPostRequest, C extends AbstractConsumer> extends
+		AbstractFlowAccessProcessor<RQ, C> {
 
 	@Override
-	protected FlowAccessResponse processRequest(final FlowAccessCredentialsPostRequest request, final C consumer) throws Exception {
+	protected FlowAccessResponse processRequest(final RQ request, final C consumer) throws Exception {
 		// Authenticate user.
 		final String userid = this.authenticateUser(request, consumer);
 		if (userid == null) return new FlowAccessResponse(EHttpStatus.C401_Unauthorized, "User authentication failed.");
@@ -42,7 +42,7 @@ public abstract class AbstractFlowAccessCredentialsPostProcessor<C extends Abstr
 	 * otherwise.
 	 * @throws Exception If any processing failed.
 	 */
-	protected abstract String authenticateUser(final FlowAccessCredentialsPostRequest request, final C consumer) throws Exception;
+	protected abstract String authenticateUser(final RQ request, final C consumer) throws Exception;
 	
 	/**
 	 * Retrieve the default permission granted to the
@@ -52,9 +52,4 @@ public abstract class AbstractFlowAccessCredentialsPostProcessor<C extends Abstr
 	 * @throws Exception If any processing failed.
 	 */
 	protected abstract String getClientCredentialsFlowPermission(final C consumer) throws Exception;
-
-	@Override
-	public Class<FlowAccessCredentialsPostRequest> getRequestType() {
-		return FlowAccessCredentialsPostRequest.class;
-	}
 }

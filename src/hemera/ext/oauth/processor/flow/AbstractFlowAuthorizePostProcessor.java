@@ -13,17 +13,12 @@ import hemera.ext.oauth.token.AbstractAuthorizationToken;
  * @author Yi Wang (Neakor)
  * @version 1.0.1
  */
-public abstract class AbstractFlowAuthorizePostProcessor<C extends AbstractConsumer>
-extends AbstractFlowAuthorizeProcessor<FlowAuthorizePostRequest, C> {
+public abstract class AbstractFlowAuthorizePostProcessor<RQ extends FlowAuthorizePostRequest, C extends AbstractConsumer>
+extends AbstractFlowAuthorizeProcessor<RQ, C> {
 
 	@Override
-	protected FlowAuthorizeResponse processRequest(final FlowAuthorizePostRequest request, final C consumer) throws Exception {
+	protected FlowAuthorizeResponse processRequest(final RQ request, final C consumer) throws Exception {
 		final AbstractAuthorizationToken token = consumer.newAuthorizationToken(request.permissions, request.userid);
 		return new FlowAuthorizeResponse(token);
-	}
-	
-	@Override
-	public Class<FlowAuthorizePostRequest> getRequestType() {
-		return FlowAuthorizePostRequest.class;
 	}
 }
