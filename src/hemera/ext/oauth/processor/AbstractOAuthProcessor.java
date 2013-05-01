@@ -11,12 +11,12 @@ import hemera.ext.oauth.token.AbstractAccessToken;
  * protected by OAuth access.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.1
  */
 public abstract class AbstractOAuthProcessor<RQ extends AbstractOAuthRequest, RS extends IResponse> extends AbstractProcessor<RQ, RS> {
 
 	@Override
-	protected final RS processRequest(final RQ request) throws Exception {
+	protected RS processRequest(final RQ request) throws Exception {
 		// Verify request.
 		final AbstractAccessToken accessToken = this.verifyRequest(request);
 		if (accessToken == null) return this.unauthorizedResponse(request);

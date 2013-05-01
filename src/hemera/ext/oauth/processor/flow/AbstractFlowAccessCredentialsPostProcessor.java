@@ -9,17 +9,17 @@ import hemera.ext.oauth.token.AccessTokenPair;
 /**
  * <code>AbstractFlowAccessCredentialsPostProcessor</code>
  * defines the processor abstraction for the OAuth
- * resource access token client credentials action post
- * operation.
+ * resource access token resource owner credentials
+ * action post operation.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.1
  */
 public abstract class AbstractFlowAccessCredentialsPostProcessor<C extends AbstractConsumer> extends
 		AbstractFlowAccessProcessor<FlowAccessCredentialsPostRequest, C> {
 
 	@Override
-	protected final FlowAccessResponse processRequest(final FlowAccessCredentialsPostRequest request, final C consumer) throws Exception {
+	protected FlowAccessResponse processRequest(final FlowAccessCredentialsPostRequest request, final C consumer) throws Exception {
 		// Authenticate user.
 		final String userid = this.authenticateUser(request, consumer);
 		if (userid == null) return new FlowAccessResponse(EHttpStatus.C401_Unauthorized, "User authentication failed.");
@@ -46,7 +46,7 @@ public abstract class AbstractFlowAccessCredentialsPostProcessor<C extends Abstr
 	
 	/**
 	 * Retrieve the default permission granted to the
-	 * consumer via the client credentials flow.
+	 * consumer via the resource owner credentials flow.
 	 * @param consumer The <code>C</code> consumer.
 	 * @return The <code>String</code> permission.
 	 * @throws Exception If any processing failed.

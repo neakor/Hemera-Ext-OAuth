@@ -69,7 +69,7 @@ public class TestTokenRandomness {
 		}
 
 		@Override
-		public boolean hasClientCredentialsFlowPrivilege() {
+		public boolean hasResourceOwnerCredentialsFlowPrivilege() {
 			return true;
 		}
 

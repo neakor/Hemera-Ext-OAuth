@@ -12,13 +12,13 @@ import hemera.ext.oauth.token.AbstractAuthorizationToken;
  * authorize action get operation.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.1
  */
 public abstract class AbstractFlowAuthorizeGetProcessor<C extends AbstractConsumer>
 extends AbstractFlowAuthorizeProcessor<FlowAuthorizeGetRequest, C> {
 
 	@Override
-	protected final FlowAuthorizeResponse processRequest(final FlowAuthorizeGetRequest request, final C consumer) throws Exception {
+	protected FlowAuthorizeResponse processRequest(final FlowAuthorizeGetRequest request, final C consumer) throws Exception {
 		// Retrieve existing token.
 		final AbstractAuthorizationToken token = consumer.getValidAuthorizationToken(request.permissions, request.userid);
 		if (token == null) {

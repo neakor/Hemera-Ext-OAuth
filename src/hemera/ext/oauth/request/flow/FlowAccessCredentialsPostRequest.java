@@ -4,8 +4,8 @@ import java.util.Map;
 
 /**
  * <code>FlowAccessCredentialsPostRequest</code> defines
- * the request for OAuth resource access token client
- * credentails action post operation.
+ * the request for OAuth resource access token resource
+ * owner credentials action post operation.
  *
  * @author Yi Wang (Neakor)
  * @version 1.0.0

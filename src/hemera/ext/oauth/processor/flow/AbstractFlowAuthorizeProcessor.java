@@ -12,28 +12,28 @@ import hemera.ext.oauth.response.flow.FlowAuthorizeResponse;
  * authorize action.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.1
  */
 abstract class AbstractFlowAuthorizeProcessor<RQ extends FlowAuthorizePostRequest, C extends AbstractConsumer> extends
 		AbstractFlowProcessor<RQ, FlowAuthorizeResponse, C> {
 	
 	@Override
-	protected final FlowAuthorizeResponse noSuchConsumerResponse(final RQ request) {
+	protected FlowAuthorizeResponse noSuchConsumerResponse(final RQ request) {
 		return new FlowAuthorizeResponse(EHttpStatus.C404_NotFound, "There is no such consumer.");
 	}
 
 	@Override
-	protected final FlowAuthorizeResponse invalidRedirectURLResponse(final RQ request) {
+	protected FlowAuthorizeResponse invalidRedirectURLResponse(final RQ request) {
 		return new FlowAuthorizeResponse(EHttpStatus.C417_ExpectationFailed, "Invalid redirect URL.");
 	}
 
 	@Override
-	protected final FlowAuthorizeResponse exceptionResponse(final RQ request, final Exception e) {
+	protected FlowAuthorizeResponse exceptionResponse(final RQ request, final Exception e) {
 		return new FlowAuthorizeResponse(EHttpStatus.C500_InternalServerError, e.getMessage());
 	}
 	
 	@Override
-	public final String getRedirectURI(final RQ request) {
+	public String getRedirectURI(final RQ request) {
 		return this.getAuthorizationServerRedirectURI(request);
 	}
 	
@@ -47,7 +47,7 @@ abstract class AbstractFlowAuthorizeProcessor<RQ extends FlowAuthorizePostReques
 	protected abstract String getAuthorizationServerRedirectURI(final RQ request);
 
 	@Override
-	public final ERedirect getRedirectBehavior(final RQ request) {
+	public ERedirect getRedirectBehavior(final RQ request) {
 		// Check request data first.
 		if (request.userid == null || request.authServerKey == null || request.authServerSecret == null) {
 			return ERedirect.RedirectBeforeInvoke;

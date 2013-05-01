@@ -13,13 +13,13 @@ import hemera.ext.oauth.token.AccessTokenPair;
  * access token action put operation.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.1
  */
 public abstract class AbstractFlowAccessPutProcessor<C extends AbstractConsumer> extends
 AbstractFlowAccessProcessor<FlowAccessPutRequest, C> {
 
 	@Override
-	protected final FlowAccessResponse processRequest(final FlowAccessPutRequest request, final C consumer) throws Exception {
+	protected FlowAccessResponse processRequest(final FlowAccessPutRequest request, final C consumer) throws Exception {
 		// Retrieve refresh token.
 		final AbstractRefreshToken refreshToken = this.getRefreshToken(request.refreshToken);
 		if (refreshToken == null) throw new IllegalArgumentException("Invalid refresh token.");

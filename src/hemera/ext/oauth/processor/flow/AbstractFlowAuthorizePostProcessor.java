@@ -11,13 +11,13 @@ import hemera.ext.oauth.token.AbstractAuthorizationToken;
  * for authorize action post operation.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.1
  */
 public abstract class AbstractFlowAuthorizePostProcessor<C extends AbstractConsumer>
 extends AbstractFlowAuthorizeProcessor<FlowAuthorizePostRequest, C> {
 
 	@Override
-	protected final FlowAuthorizeResponse processRequest(final FlowAuthorizePostRequest request, final C consumer) throws Exception {
+	protected FlowAuthorizeResponse processRequest(final FlowAuthorizePostRequest request, final C consumer) throws Exception {
 		final AbstractAuthorizationToken token = consumer.newAuthorizationToken(request.permissions, request.userid);
 		return new FlowAuthorizeResponse(token);
 	}

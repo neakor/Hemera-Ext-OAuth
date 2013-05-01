@@ -13,13 +13,13 @@ import hemera.ext.oauth.token.AccessTokenPair;
  * access token action post operation.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.1
  */
 public abstract class AbstractFlowAccessPostProcessor<C extends AbstractConsumer> extends
 AbstractFlowAccessProcessor<FlowAccessPostRequest, C> {
 
 	@Override
-	protected final FlowAccessResponse processRequest(final FlowAccessPostRequest request, final C consumer) throws Exception {
+	protected FlowAccessResponse processRequest(final FlowAccessPostRequest request, final C consumer) throws Exception {
 		// Retrieve authorization token.
 		final AbstractAuthorizationToken authorizationToken = this.getAuthorizationToken(request.authorizationToken);
 		if (authorizationToken == null) throw new IllegalArgumentException("Invalid authorization token.");

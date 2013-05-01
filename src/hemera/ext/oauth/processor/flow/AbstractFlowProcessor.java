@@ -11,13 +11,13 @@ import hemera.ext.oauth.request.flow.AbstractFlowRequest;
  * all OAuth flow actions.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.1
  */
 public abstract class AbstractFlowProcessor<RQ extends AbstractFlowRequest, RS extends AbstractResponse, C extends AbstractConsumer>
 extends AbstractProcessor<RQ, RS> {
 
 	@Override
-	protected final RS processRequest(final RQ request) throws Exception {
+	protected RS processRequest(final RQ request) throws Exception {
 		// Retrieve consumer.
 		final C consumer = this.getConsumer(request);
 		if (consumer == null) {

@@ -63,7 +63,7 @@ import org.apache.commons.codec.DecoderException;
  * encryption key.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.1
  */
 public abstract class AbstractConsumer {
 	/**
@@ -428,12 +428,12 @@ public abstract class AbstractConsumer {
 	/**
 	 * Create a new pair of access and refresh tokens
 	 * if the specified consumer secret is valid and
-	 * this consumer has the client credentials flow
-	 * privilege.
+	 * this consumer has the resource owner credentials
+	 * flow privilege.
 	 * <p>
 	 * This method should only be used to generate
-	 * an access token with the client credentials
-	 * flow.
+	 * an access token with the resource owner
+	 * credentials flow.
 	 * @param consumerSecret The <code>String</code>
 	 * consumer secret to validate.
 	 * @param userid The <code>String</code> ID of the
@@ -464,8 +464,8 @@ public abstract class AbstractConsumer {
 		final boolean secretValid = this.verifySecret(consumerSecret);
 		if (!secretValid) throw new IllegalArgumentException("Invalid consumer secret.");
 		// Verify privilege.
-		if (!this.hasClientCredentialsFlowPrivilege()) throw new RuntimeException("Insufficient consumer privilege.");
-		// Use consumer key and client credentials flow permission as seed.
+		if (!this.hasResourceOwnerCredentialsFlowPrivilege()) throw new RuntimeException("Insufficient consumer privilege.");
+		// Use consumer key and permission as seed.
 		final String seed = this.key+permissions;
 		// Generate new access token value.
 		final String accessTokenValue = this.randomToken(seed);
@@ -517,7 +517,7 @@ public abstract class AbstractConsumer {
 		// Invalidate previous tokens.
 		refreshToken.invalidate();
 		oldAccessToken.invalidate();
-		// Use consumer key and client credentials flow permission as seed.
+		// Use consumer key, old access token and permission as seed.
 		final String seed = this.key+oldAccessToken.permissions;
 		// Generate new access token value.
 		final String newAccessTokenValue = this.randomToken(seed);
@@ -588,12 +588,12 @@ public abstract class AbstractConsumer {
 	public abstract boolean hasUserAuthenticationPrivilege();
 
 	/**
-	 * Check if the consumer has client credentials
+	 * Check if the consumer has resource owner credentials
 	 * flow privilege that allows the consumer to obtain
 	 * all permissions over a user's data without the
 	 * need to go through the user authorization process.
 	 * @return <code>true</code> if the consumer has
 	 * such privilege. <code>false</code> otherwise.
 	 */
-	public abstract boolean hasClientCredentialsFlowPrivilege();
+	public abstract boolean hasResourceOwnerCredentialsFlowPrivilege();
 }
